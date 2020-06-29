@@ -1,5 +1,5 @@
 """""""""""""""""
-LocalTFEM
+LocalTFEM (incomplete README...)
 """""""""""""""""
 ...................................................................................................
 A continuous 2D finite element for unstructured, simplicial meshes requiring only local operations
