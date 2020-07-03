@@ -48,7 +48,7 @@ function [Nodes, Elements, Areas] = mshLoader(fname)
        C = [Nodes(two_d_elements(e_cnt,3), 1), Nodes(two_d_elements(e_cnt,3), 2)];
        Areas(e_cnt) = (1/2)*det([A(1), A(2), 1; B(1), B(2), 1; C(1), C(2), 1 ]);    
     end
-    OrderSwaps = find(Areas<0)
+    OrderSwaps = find(Areas<0);
     Elements(OrderSwaps, :) = Elements(OrderSwaps, :)*[0,1,0;1,0,0;0,0,1];
     Areas = abs(Areas);
     
