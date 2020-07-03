@@ -36,6 +36,7 @@ The project is structured as follows
     ├── README.rst
     │ 
     ├── test_p345Conv.m
+    ├── test_DubinerSquareHeatedPlate.m
     │
     ├── private/          
     │   ├── assembly/
@@ -48,6 +49,7 @@ The project is structured as follows
     │   │   ├── Create_Poly.m
     │   │   ├── Dubiner_Mass.m
     │   │   ├── Dubiner_Modes.m
+    │   │   ├── GradPhi.m
     │   │   └── Jacobi_Coeffs.m
     │   ├── libraries/
     │   │   └── ...
@@ -58,8 +60,13 @@ The project is structured as follows
     │   │   ├── mshLoader.m
     │   │   └── structured_mesh.m
     │   ├── quadrature/
-    │   │   └── lglnodes.m
+    │   │   ├── lglnodes.m
+    │   │   ├── lgrnodes.m
+    │   │   ├── lgwt.m
+    │   │   └── RefTri_Quad.m
     │   └── visualization/
+    │       ├── Make_Video.m
+    │       └── View_Soln.m
     └──
 
 
@@ -86,18 +93,23 @@ L2_Errors.mat a table of L2 errors for given mesh sizes
 Tests
 ----------------------
 
-All tests are currently in root directory
+Current tests available:
 
-----------------------
+Convergence of LT for p=3,4,5
+------------------------------
+The MATLAB script test_p345Conv.m creates convergence plots to demonstrate the desired convergence rates of the novel lower-triangular pseudo-mass matrix method.
+This method is shown to be *(p-1)*-exact and achieves the *p-th* order spatial convergence rates.
+
 Heat Equation
 ----------------------
+The MATLAB script test_DubinerSquareHeatedPlate.m creates an .avi video demonstrating a heated plate with one homogeneous Dirichlet boundary condition on the left.
+The script allows the user to change initial heat distribution, mesh size, the polynomial degree of the modified Dubiner basis used, final time, time step size, and frame quality for the video frame rendering.
 
-Not yet
+--------------------------------
+Local Integration for LT scheme
+--------------------------------
+Not yet.
 
-Visualizations
---------------------------
-
-Not yet
 
 ===================
 Acknowledgements
