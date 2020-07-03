@@ -1,5 +1,5 @@
 """""""""""""""""
-LocalTFEM
+LocalTFEM (incomplete README...)
 """""""""""""""""
 ...................................................................................................
 A continuous 2D finite element for unstructured, simplicial meshes requiring only local operations
@@ -12,7 +12,7 @@ A continuous 2D finite element for unstructured, simplicial meshes requiring onl
 About
 ===================
 
-This is a $(p-1)$-exact, continuous, triangular finite element method for explicit time advancement
+This is a *(p-1)*-exact, continuous, triangular finite element method for explicit time advancement
 This version is meant to project 2nd order polynomials exactly and achieve the expected 3rd order convergence in space.
 The project is based on article currently availabe as preprint at https://arxiv.org/abs/1906.10774
 
