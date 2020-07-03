@@ -1,6 +1,6 @@
 clc; close all; clear all;
 
-p=6;
+p=3;
 
 % add necessary paths
 addpath('./private/dubiner/');
@@ -15,7 +15,7 @@ init_heat = @(x,y) 2.*(x+1).*(x-1).*(y+1).*(y-1);% cos((pi/2).*x) + sin((pi/2).*
 % as an example only, set left boundary (x = -1), to homogeneous Dirichlet
 D_Bndry = 0; % imposed on U
 mesh_choice = 2; % from 0 to 8 (roughest to finest) Note CFL condition
-t0 = 0; tFin = 4.5; % t0 = 0, tFin = final time
+t0 = 0; tFin = 3; % t0 = 0, tFin = final time
 delT = .0001; % time step must decrease with mesh size to meet cfl condition
 Time = t0:delT:tFin; 
 Alpha = 1/2;  % thermal diffusivity
