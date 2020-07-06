@@ -1,4 +1,4 @@
-% clc; close all; clear all;
+clc; close all; clear all;
 
 p=3;
 
@@ -16,11 +16,11 @@ init_heat = @(x,y) 2.*(x+1).*(x-1).*(y+1).*(y-1);% cos((pi/2).*x) + sin((pi/2).*
 % as an example only, set left boundary (x = -1), to homogeneous Dirichlet
 D_Bndry = 0; % imposed on U
 mesh_choice = 2; % from 0 to 8 (roughest to finest) Note CFL condition
-t0 = 0; tFin = 2; % t0 = 0, tFin = final time
+t0 = 0; tFin = .5; % t0 = 0, tFin = final time
 delT = .0001; % time step must decrease with mesh size to meet cfl condition
 Time = t0:delT:tFin; 
 Alpha = 1/2;  % thermal diffusivity
-render_quality=3; % quality of frame renders 1-4 for video;
+how_rough=1; % quality of frame renders 1-4 for video;
 
 % set some indexing constants
 tm = (1/2)*(p+1)*(p+2); % number of total local modes
@@ -29,37 +29,14 @@ sm1 = vm + (1:3:3*(p-1)); sm2 = sm1+1; sm3 = sm1+2; % local side modes
 im = sm3(end)+1:tm; % local interior modes
 
 % set local twisted structures and modified dubiner functions
-[M] = Dubiner_Mass(p); % the function call says it all
-[Phi, EvalPhi, Modes_Xi, Modes_Eta] = Dubiner_Modes(p);
-GradPhi = GradPhi(p);
+[L, T, M] = symbolic_LandT(p);
 
 % Some things needed to symbolically integrate Ke for the time being
 syms r s; 
-% PhiRef = Phi;
-% GradPhiRef = PhiRef;
-% Xi = @(r,s) -1+2.*(1+r)./(1-s);
-% Eta = @(r,s) s;
-% syms x y
-% for fcount = 1:tm
-%     PhiRef{fcount} =@(r,s) Phi{fcount}(Xi(r,s), Eta(r,s));
-% end
-% for fcount = 1:tm
-%     temp1 = matlabFunction(diff(PhiRef{fcount}(r,s),r));
-%     temp2 = matlabFunction(diff(PhiRef{fcount}(r,s),s));
-%     
-%     addr1 = find(char(temp1) == ')'); addr1 = addr1(1)+1;
-%     temp1 = char(temp1); temp1 = temp1(addr1:end);
-%     GradPhiRef{fcount,1} = str2func("@(r,s) 0.*r+(" + temp1 + ")");
-%     
-%     addr2 = find(char(temp2) == ')'); addr2 = addr2(1)+1;
-%     temp2 = char(temp2); temp2 = temp2(addr2:end);
-%     GradPhiRef{fcount,2} = str2func("@(r,s) 0.*s+(" + temp2 + ")");
-% end
 
+[Phi, EvalPhi, Modes_Xi, Modes_Eta] = Dubiner_Modes(p);
 [PhiRef, GradPhiRef] = PhiRefFuncs(p);
-% [Phi, PhiRef, GradPhiRef] = PsiFuncs(p);
-% [L, T, M] = symbolic_LandT(p);
-% M = L;
+[Psi, PsiRef, GradPsiRef] = PsiFuncs(p);
 
 %% Load Mesh Objects
 eval(sprintf("load ./private/libraries/lib_Structured_Meshes/Areas%d.mat;",mesh_choice));
@@ -83,7 +60,7 @@ Num_Global_DoFs = Num_Nodes + (p-1)*Num_Edges + (1/2)*(p-1)*(p-2)*Num_Elements;
 U = zeros(Num_Global_DoFs, numel(Time));
 Ke = zeros(tm, tm, Num_Elements);
 
-GMass = Create_Global_Mass(p, M, Num_Global_DoFs, Num_Elements, Nodes, Elements, Areas, sgn, map);
+GMass = Create_Global_Mass(p, L, Num_Global_DoFs, Num_Elements, Nodes, Elements, Areas, sgn, map);
     
 GK = zeros(size(GMass,1), size(GMass,2));
 GRHS = zeros(Num_Global_DoFs, 1);
@@ -96,7 +73,7 @@ for elem_cnt = 1:Num_Elements
     pause(0.0001);
     % Create local RHS
     Elem_Verts = Nodes(Elements(elem_cnt, 1:3),:);     
-    [Loc_RHS] = Eval_RHS(@(x,y) init_heat(x,y), Elem_Verts, Areas(elem_cnt), p, Phi);
+    [Loc_RHS] = Eval_RHS(@(x,y) init_heat(x,y), Elem_Verts, Areas(elem_cnt), p, Psi);
 %     GRHS(map(elem_cnt,:)) = GRHS(map(elem_cnt,:))+sgn(elem_cnt,:)'.*Loc_RHS;
     for j_cnt = 1:(1/2)*(p+1)*(p+2)
       GRHS(map(elem_cnt,j_cnt)) = GRHS(map(elem_cnt,j_cnt))...
@@ -124,9 +101,13 @@ for elem_cnt = 1:Num_Elements
 %                 ,r,-1,-s ),s,-1,1 )); 
             % Numerical integration can be exact to round off and is faster
             Ke_temp(icount, jcount) = (Area/2).* (RefTri_Quad( @(r,s) ...
-                GradPhiRef{jcount,1}(r,s).* (H(1,1).*GradPhiRef{icount,1}(r,s)...
-                + H(1,2).*GradPhiRef{icount,2}(r,s)) + GradPhiRef{jcount,2}(r,s)...
-                .*( H(2,1).*(GradPhiRef{icount,1}(r,s)) + H(2,2).*GradPhiRef{icount,2}(r,s)), p)); 
+                GradPsiRef{jcount,1}(r,s).* (H(1,1).*GradPsiRef{icount,1}(r,s)...
+                + H(1,2).*GradPsiRef{icount,2}(r,s)) + GradPsiRef{jcount,2}(r,s)...
+                .*( H(2,1).*(GradPsiRef{icount,1}(r,s)) + H(2,2).*GradPsiRef{icount,2}(r,s)), p)); 
+%             Ke_temp(icount, jcount) = (Area/2).* (RefTri_Quad( @(r,s) ...
+%                 GradPhiRef{jcount,1}(r,s).* (H(1,1).*GradPhiRef{icount,1}(r,s)...
+%                 + H(1,2).*GradPhiRef{icount,2}(r,s)) + GradPhiRef{jcount,2}(r,s)...
+%                 .*( H(2,1).*(GradPhiRef{icount,1}(r,s)) + H(2,2).*GradPhiRef{icount,2}(r,s)), p));
             GK(map(elem_cnt,icount), map(elem_cnt, jcount)) = GK(map(elem_cnt,icount), map(elem_cnt, jcount))+sgn(elem_cnt, icount)*sgn(elem_cnt, jcount)*Ke_temp(icount, jcount);
        end
     end

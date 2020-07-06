@@ -8,7 +8,6 @@ function [] = View_Soln(U, Elements, Nodes, map, sgn, p, Phi, how_rough)%, myfun
   how_rough = 2;
  end
  
-%  addpath ./Mesh_Stuff
  switch(how_rough)
   case 1
     [Ref_Pts, Ref_Tri] = mshLoader('./private/libraries/lib_RefTri_Meshes/Ref_Tri_Rough.msh');

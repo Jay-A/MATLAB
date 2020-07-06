@@ -1,20 +1,25 @@
-clc; close all; clear all;
+close all; clear all;
 
 addpath('./private/dubiner/', './private/quadrature/', './private/mesh/', ...
-    './private/assembly/', './private/local/');
+    './private/assembly/', './private/local/', './private/lower_triangular/', ...
+    './private/visualization/');
 
 % set function to approximate F0 = @(x,y) cos(2.*pi.*y) + sin(2.*pi.*y);
 F0 = @(x,y) (x-1).^2.*(y-1).^2.*(x+y).^2.*(x+1).^2.*(y+1).^2; %cos(2.*pi.*y) + sin(2.*pi.*y);
 
 % Define p for basis degree
-p = 5;
+p = 3;
 
 % Define L and T for p
-% [Lj,Tj] = Make_LT_Nov19(p);
-eval(sprintf("load('./private/libraries/lib_LT_Ts/L%d.mat');", p));
-eval(sprintf("load('./private/libraries/lib_LT_Ts/T%d.mat');", p));
-% T = Tg; L = Lg;
-Tj = T; Mj = L;
+% eval(sprintf("load('./private/libraries/lib_LT_Ts/L%d.mat');", p));
+% eval(sprintf("load('./private/libraries/lib_LT_Ts/T%d.mat');", p));
+[L, T, M] = symbolic_LandT(p); version = 0;  % symbolic_LandT(p) demonstrates one way to identify (LT^{-T}) and T because T is not unique for all edge modes.
+% T = eye(size(T,1), size(T,2)); L = M; version = 1; % uncomment to test the full modified dubiner basis
+if version == 0
+    fprintf(' Naive Lower-Triangular Approach for p = %d \n', p);
+else
+    fprintf(' Full Modified Dubiner Approach for p = %d \n', p);
+end
 
 % set local  modified dubiner functions and mass
 [Phi, EvalPhi, Modes_Xi, Modes_Eta] = Dubiner_Modes(p);
@@ -54,20 +59,12 @@ for n = m_first:m_final
 
     %%%  Create Global Mass Matrix and Right Hand Side
     GMassLT = Create_Global_Mass(p, L, Num_Global_DoFs, Num_Elements, Nodes, Elements, Areas, sgn, map);
+    GMassD = Create_Global_Mass(p, M, Num_Global_DoFs, Num_Elements, Nodes, Elements, Areas, sgn, map);
+    GRHS = Create_Global_RHS(p, Num_Global_DoFs, Num_Elements, Nodes, Elements, Areas, sgn, map, F0, Phi);
     GRHSLT = Create_Global_RHSLT(p, Num_Global_DoFs, Num_Elements, Nodes, Elements, Areas, sgn, map, F0, Phi, T);
 
     ULT = GMassLT\GRHSLT;
-	%%% Create Psi_Evals (size(XI), dim(T(p)))
-    [tempdim,dmp] = size(XI);
-    Psi_Evals = zeros(tempdim, tempdim, (1/2)*(p+1)*(p+2));
-    clear dmp tempdim;
-    for cnt_psi = 1:(1/2)*(p+1)*(p+2)
-       for cnt_T = 1:(1/2)*(p+1)*(p+2)
-            Psi_Evals(:,:,cnt_psi) = Psi_Evals(:,:,cnt_psi) + T(cnt_psi, cnt_T).*Phi{cnt_T}(XI, ETA);
-       end
-       clear cnt_T;
-    end
-    clear cnt_psi;
+    UD = GMassD\GRHS;
 
     for cnt_Elements = 1:Num_Elements
         
@@ -83,7 +80,7 @@ for n = m_first:m_final
             F0_k = F0(X,Y);
             ULT_k = zeros(size(XI));
             for cnt_Modes = 1:(1/2)*(p+1)*(p+2)
-                ULT_k = ULT_k + sgn(cnt_Elements, cnt_Modes).*ULT(map(cnt_Elements, cnt_Modes)).*Psi_Evals(:,:,cnt_Modes);
+                ULT_k = ULT_k + sgn(cnt_Elements, cnt_Modes).*ULT(map(cnt_Elements, cnt_Modes)).*Phi{cnt_Modes}(XI,ETA);
             end
             clear X Y Xmap Ymap cnt_Modes;
 
@@ -95,10 +92,13 @@ for n = m_first:m_final
     L2_Errors(i_cnt+1,2) = ErrorLT;
 end
 
-clear m_first m_final m_range n i_cnt R S Phi Psi_Evals Modes_Xi Modes_Eta 
-clear XI ETA ErrorLT ErrorsD_k GRHSLT Mj Tj T F0_k Dub_loc EvalPhi GMassLT
-clear T ULT_k WTS xi eta lgl_nodes lgl_weights L Num_Edges Num_Nodes 
-clear Num_Elements sgn Num_Global_DoFs
+% clear m_first m_final m_range n i_cnt R S Modes_Xi Modes_Eta 
+% clear XI ETA GRHSLT Mj Tj T F0_k Dub_loc EvalPhi GMassLT
+% clear ULT_k WTS xi eta lgl_nodes lgl_weights Num_Edges Num_Nodes 
+% clear Num_Elements Num_Global_DoFs
 
 L2_Errors
 
+% rmpath('./private/dubiner/', './private/quadrature/', './private/mesh/', ...
+%     './private/assembly/', './private/local/', './private/lower_triangular/', ...
+%     './private/visualization/');
